@@ -41,6 +41,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.internal.widget.TintManager;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -86,6 +87,8 @@ import android.widget.Toast;
  * @see <a href="http://www.google.com/design/spec/components/tabs.html">Tabs</a>
  */
 public class TabLayout extends HorizontalScrollView {
+	
+	private static final String LOG_TAG = "TabLayout";
 
     private static final Interpolator INTERPOLATOR = new FastOutSlowInInterpolator();
     private static final int MAX_TAB_TEXT_LINES = 2;
@@ -212,12 +215,9 @@ public class TabLayout extends HorizontalScrollView {
     }
 
     public TabLayout(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
-
-    public TabLayout(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-
+    	
+    	super(context, attrs);
+    	
         // Disable the Scroll Bar
         setHorizontalScrollBarEnabled(false);
         // Set us to fill the View port
@@ -227,12 +227,11 @@ public class TabLayout extends HorizontalScrollView {
         mTabStrip = new SlidingTabStrip(context);
         addView(mTabStrip, LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 
-        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TabLayout,
-                defStyleAttr, R.style.Widget_Design_TabLayout);
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TabLayout);
 
         mTabStrip.setSelectedIndicatorHeight(
                 a.getDimensionPixelSize(R.styleable.TabLayout_tabIndicatorHeight, 0));
-        mTabStrip.setSelectedIndicatorColor(a.getColor(R.styleable.TabLayout_tabIndicatorColor, 0));
+        mTabStrip.setSelectedIndicatorColor(getResources().getColor(R.color.bright_foreground_disabled_material_light));
 
         mTabTextAppearance = a.getResourceId(R.styleable.TabLayout_tabTextAppearance,
                 R.style.TextAppearance_Design_Tab);
@@ -263,7 +262,10 @@ public class TabLayout extends HorizontalScrollView {
 
         // Now apply the tab mode and gravity
         applyModeAndGravity();
+    	
+    	//        this(context, attrs, 0);
     }
+
 
     /**
      * Set the scroll position of the tabs. This is useful for when the tabs are being displayed as
@@ -309,8 +311,11 @@ public class TabLayout extends HorizontalScrollView {
      */
     public ViewPager.OnPageChangeListener createOnPageChangeListener() {
         return new ViewPager.SimpleOnPageChangeListener() {
-            private int mScrollState;
+            
+        	private int mScrollState;
 
+        	private int mPosition = -1;
+        	
             @Override
             public void onPageScrolled(int position, float positionOffset,
                     int positionOffsetPixels) {
@@ -319,14 +324,26 @@ public class TabLayout extends HorizontalScrollView {
 
             @Override
             public void onPageSelected(int position) {
-                if (mScrollState == ViewPager.SCROLL_STATE_IDLE) {
-                    getTabAt(position).select();
-                }
+            	
+            	Log.i(LOG_TAG, "createOnPageChangeListener onPageSelected mScrollState: " + mScrollState + " - mPosition: " + mPosition);
+            	
+                
+                mPosition = position;
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
+            	
+            	Log.i(LOG_TAG, "createOnPageChangeListener onPageScrollStateChanged mScrollState: " + state  + " - mPosition: " + mPosition);
+            	
                 mScrollState = state;
+                
+                if (mScrollState == ViewPager.SCROLL_STATE_IDLE && mPosition != -1) {
+                	
+                    getTabAt(mPosition).select();
+                    
+                    mPosition = -1;
+                }
             }
         };
     }
@@ -958,6 +975,9 @@ public class TabLayout extends HorizontalScrollView {
          * Select this tab. Only valid if the tab has been added to the action bar.
          */
         public void select() {
+        	
+        	Log.i(LOG_TAG, "Tab select");
+        	
             mParent.selectTab(this);
         }
 
